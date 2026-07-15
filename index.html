@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>連鎖品牌展店分析平台(GIS)功能規格書 V1.0</title>
+<style>
+  body { font-family: "PingFang TC","Microsoft JhengHei",sans-serif; color:#222; max-width: 960px; margin: 0 auto; padding: 40px 24px; line-height:1.75; }
+  h1 { font-size: 26px; border-bottom: 3px solid #2c5f8a; padding-bottom: 10px; }
+  h2 { font-size: 20px; color:#2c5f8a; border-left: 5px solid #2c5f8a; padding-left: 10px; margin-top: 44px; }
+  h3 { font-size: 16px; margin-top: 28px; color:#333; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 14px; }
+  th, td { border: 1px solid #bbb; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef3f8; white-space: nowrap; }
+  .meta td:first-child { background:#f6f6f6; width: 120px; }
+  .tag { display:inline-block; background:#2c5f8a; color:#fff; border-radius:3px; padding:0 6px; font-size:12px; margin-right:4px; }
+  .tbd { color:#b25a00; font-weight:bold; }
+  .fig { margin: 20px 0; text-align:center; }
+  .fig .cap { font-size: 13px; color:#666; margin-top:6px; }
+  .note { background:#fff8e6; border:1px solid #e6d090; padding:8px 12px; font-size:14px; border-radius:4px; }
+  @media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+
+<h1>連鎖品牌展店分析平台(GIS)<br>功能規格書 V1.0</h1>
+
+<table class="meta">
+  <tr><td>文件版本</td><td>V1.0 初稿</td></tr>
+  <tr><td>日期</td><td>2026-07-15</td></tr>
+  <tr><td>狀態</td><td>草稿,待審閱</td></tr>
+  <tr><td>適用範圍</td><td>V1.0 開發範圍;V1.1 / V2.0 僅概述</td></tr>
+</table>
+
+<h2>1. 文件目的與使用情境</h2>
+<p>本平台供連鎖品牌於<strong>加盟展</strong>展示展店情形使用。核心情境:展會業務向潛在加盟主展示集團各品牌現有分店與保障範圍,即場查詢潛在加盟主屬意的店址是否落入既有保障範圍,並在其付訂金後將該點位登錄為潛在點位,形成準保障範圍,避免重複招商。</p>
+
+<h3>1.1 使用角色</h3>
+<table>
+  <tr><th>角色</th><th>說明</th><th>V1.0 主要操作</th></tr>
+  <tr><td>展會業務</td><td>加盟展現場操作者,同一展位僅一個新增窗口</td><td>圖層瀏覽、地址查詢、潛在點位增刪查改</td></tr>
+  <tr><td>總部管理者</td><td>維護基礎資料</td><td>品牌/分店資料維護、保障範圍參數設定(V1.0 可先以資料匯入方式處理,維護介面於後續版本補齊)</td></tr>
+</table>
+
+<div class="note">V1.0 不揭露敏感資訊,故不區分展示模式/作業模式;展示與作業共用同一介面,權限與模式分離規劃於 V2.0。</div>
+
+<h2>2. 版本藍圖</h2>
+<table>
+  <tr><th>版本</th><th>功能項目</th></tr>
+  <tr><td><strong>V1.0</strong></td><td>地圖框架與圖層開關(多品牌/單品牌)、分店與保障範圍展示(行政區/半徑二模式)、潛在店址查詢與衝突檢核(含地圖點選 fallback)、潛在點位增刪查改(狀態至「已付訂保留」,無有效期管理)、參考圖層:租金行情、店家 POI、大眾運輸+步行距離(快取)、停車場+步行距離(快取)、人口與客群統計</td></tr>
+  <tr><td><strong>V1.1</strong></td><td>等時圈商圈範圍(步行 5/10 分鐘)、候選點評分卡、操作記錄</td></tr>
+  <tr><td><strong>V2.0</strong></td><td>完整點位狀態機(已簽約/已開店/已釋出、有效期管理)、多設備即時同步、一鍵點位評估報告、展示模式/作業模式與權限、推薦展店區域維護後台、API 用量儀表板</td></tr>
+</table>
+
+<h2>3. 系統架構</h2>
+<div class="fig">
+<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang TC','Microsoft JhengHei',sans-serif" font-size="13">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#555"/></marker>
+  </defs>
+  <!-- client -->
+  <rect x="280" y="10" width="340" height="88" rx="6" fill="#eaf2fa" stroke="#2c5f8a"/>
+  <text x="450" y="32" text-anchor="middle" font-weight="bold" fill="#2c5f8a">Web 前端(展會業務端瀏覽器)</text>
+  <rect x="298" y="44" width="92" height="40" rx="4" fill="#fff" stroke="#88a"/><text x="344" y="68" text-anchor="middle">地圖框架</text>
+  <rect x="402" y="44" width="92" height="40" rx="4" fill="#fff" stroke="#88a"/><text x="448" y="68" text-anchor="middle">圖層管理</text>
+  <rect x="506" y="44" width="96" height="40" rx="4" fill="#fff" stroke="#88a"/><text x="554" y="62" text-anchor="middle">查詢/點位</text><text x="554" y="78" text-anchor="middle">操作介面</text>
+  <line x1="450" y1="98" x2="450" y2="140" stroke="#555" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="465" y="125" fill="#555">HTTPS / REST API</text>
+  <!-- backend -->
+  <rect x="90" y="140" width="720" height="150" rx="6" fill="#f3f8ef" stroke="#5a7f3f"/>
+  <text x="450" y="162" text-anchor="middle" font-weight="bold" fill="#4a6f33">後端應用服務(API Server)</text>
+  <rect x="110" y="176" width="126" height="52" rx="4" fill="#fff" stroke="#8a8"/><text x="173" y="198" text-anchor="middle">品牌/分店</text><text x="173" y="216" text-anchor="middle">服務</text>
+  <rect x="248" y="176" width="126" height="52" rx="4" fill="#fff" stroke="#8a8"/><text x="311" y="198" text-anchor="middle">保障範圍</text><text x="311" y="216" text-anchor="middle">檢核引擎</text>
+  <rect x="386" y="176" width="126" height="52" rx="4" fill="#fff" stroke="#8a8"/><text x="449" y="198" text-anchor="middle">潛在點位</text><text x="449" y="216" text-anchor="middle">服務(CRUD)</text>
+  <rect x="524" y="176" width="126" height="52" rx="4" fill="#fff" stroke="#8a8"/><text x="587" y="198" text-anchor="middle">圖層資料</text><text x="587" y="216" text-anchor="middle">服務</text>
+  <rect x="662" y="176" width="126" height="52" rx="4" fill="#fff" stroke="#8a8"/><text x="725" y="198" text-anchor="middle">路徑規劃</text><text x="725" y="216" text-anchor="middle">快取服務</text>
+  <rect x="110" y="238" width="678" height="36" rx="4" fill="#fff" stroke="#8a8"/><text x="449" y="261" text-anchor="middle">地理編碼(Geocoding)代理:TGOS 為主、Google 備援,失敗回傳前端啟用地圖點選</text>
+  <!-- db -->
+  <line x1="300" y1="290" x2="300" y2="330" stroke="#555" stroke-width="1.5" marker-end="url(#ar)"/>
+  <rect x="130" y="330" width="340" height="88" rx="6" fill="#fdf3ee" stroke="#a05a2c"/>
+  <text x="300" y="354" text-anchor="middle" font-weight="bold" fill="#a05a2c">PostgreSQL + PostGIS</text>
+  <text x="300" y="378" text-anchor="middle">品牌/分店/潛在點位/保障設定</text>
+  <text x="300" y="398" text-anchor="middle">行政區圖資、租金網格、路徑快取</text>
+  <!-- ext -->
+  <line x1="620" y1="290" x2="620" y2="330" stroke="#555" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#ar)"/>
+  <rect x="500" y="330" width="360" height="196" rx="6" fill="#f5f0fa" stroke="#6a4a9a"/>
+  <text x="680" y="354" text-anchor="middle" font-weight="bold" fill="#6a4a9a">外部服務(介接來源均待評估確認)</text>
+  <text x="520" y="382">・TGOS 門牌定位/村里行政區圖資</text>
+  <text x="520" y="406">・Google Geocoding / Directions(步行)</text>
+  <text x="520" y="430">・POI 資料(Google Places / OSM / 政府開放資料)</text>
+  <text x="520" y="454">・人口客群統計(SEGIS 社會經濟資料平台)</text>
+  <text x="520" y="478">・租金行情(實價登錄租賃等)</text>
+  <text x="520" y="502">・底圖(Google Maps / MapLibre+OSM)</text>
+  <!-- db-cache note -->
+  <rect x="130" y="440" width="340" height="60" rx="6" fill="#fffbe8" stroke="#c9a227"/>
+  <text x="300" y="464" text-anchor="middle" fill="#8a6d00">快取原則:Directions 步行結果落地儲存,</text>
+  <text x="300" y="486" text-anchor="middle" fill="#8a6d00">同起訖點不重複呼叫外部 API</text>
+</svg>
+<div class="cap">圖 3-1 系統架構圖(外部來源均為候選,依評估結果替換)</div>
+</div>
+
+<h2>4. V1.0 功能規格</h2>
+
+<h3>F-01 地圖框架與圖層開關</h3>
+<table>
+  <tr><th>功能說明</th><td>以地圖為主畫面,所有資訊(分店、保障範圍、潛在點位、參考圖層)均以獨立圖層呈現,可個別開關、自由疊加。</td></tr>
+  <tr><th>操作流程</th><td>進入系統載入底圖與預設圖層(分店+保障範圍)→ 於圖層面板勾選/取消圖層 → 地圖即時重繪。</td></tr>
+  <tr><th>業務規則</th><td>(1) 品牌篩選:可選「全部品牌」或勾選單一/多個品牌,篩選同時作用於分店、保障範圍、潛在點位圖層。(2) 各品牌以固定代表色區別。(3) 圖層開關狀態不需跨登入保存(V1.0)。</td></tr>
+  <tr><th>例外處理</th><td>圖層資料載入失敗時,該圖層顯示錯誤標記並可重試,不影響其他圖層。</td></tr>
+</table>
+
+<h3>F-02 品牌與分店管理</h3>
+<table>
+  <tr><th>功能說明</th><td>維護集團-品牌-分店三層資料。V1.0 以批次匯入(Excel/CSV)+基本編輯為主。</td></tr>
+  <tr><th>資料項目</th><td>分店:所屬品牌、店名、地址、座標(匯入時地理編碼)、所在行政區、<strong>店型</strong>(街邊店/百貨店/車站店/賣場店/其他)、<strong>是否計入保障範圍</strong>(布林,特殊店型預設「否」,可逐店調整)、營運狀態(營運中/籌備中/已歇業)。</td></tr>
+  <tr><th>業務規則</th><td>(1) 僅「營運中/籌備中」且「計入保障範圍=是」的分店產生保障範圍。(2) 地址變更時重新地理編碼並重算所在行政區。</td></tr>
+  <tr><th>例外處理</th><td>匯入時地理編碼失敗的分店列入待處理清單,可於地圖手動定位。</td></tr>
+</table>
+
+<h3>F-03 保障範圍</h3>
+<table>
+  <tr><th>功能說明</th><td>依品牌設定之模式繪製各分店保障範圍:<strong>行政區模式</strong>(分店所在行政區整區為保障範圍)或<strong>半徑模式</strong>(以分店座標為圓心、X 公里為半徑)。</td></tr>
+  <tr><th>設定層級</th><td>(1) 模式與參數(半徑公里數)設定於<strong>品牌層級</strong>,同品牌各分店原則一致。(2) 個別分店可<strong>覆寫</strong>模式或參數。(3) <strong>跨品牌互斥</strong>:預設不互斥(A 品牌保障範圍不阻擋 B 品牌進駐),提供品牌兩兩互斥之設定彈性。</td></tr>
+  <tr><th>業務規則</th><td>(1) 行政區模式以「鄉鎮市區」為單位,採內政部 TGOS 行政區圖資並記錄圖資版本。(2) 半徑模式以測地線距離(geodesic)計算。(3) 「已付訂保留」之潛在點位依其所屬品牌模式產生<strong>準保障範圍</strong>,與正式保障範圍同樣參與衝突檢核,圖面以虛線區別。</td></tr>
+  <tr><th>例外處理</th><td>行政區圖資版本更新造成分店行政區歸屬變動時,列出差異清單供管理者確認。</td></tr>
+</table>
+
+<h3>F-04 潛在店址查詢與衝突檢核</h3>
+<table>
+  <tr><th>功能說明</th><td>輸入詳細地址、路段或行政區進行定位,檢核該落點是否位於任何有效保障範圍(含準保障範圍)內,並可檢視周邊店家分佈。</td></tr>
+  <tr><th>操作流程</th><td>輸入地址 → 地理編碼定位 → 系統對「勾選中的品牌」逐一檢核 → 顯示各品牌可展店/不可展店結果與衝突來源(哪一家分店/點位的保障範圍)→ 可一鍵將該落點「新增為潛在點位」。</td></tr>
+  <tr><th>檢核邏輯</th><td>(1) 行政區模式品牌:落點行政區 = 任一有效分店所在行政區 → 衝突。(2) 半徑模式品牌:落點與任一有效分店距離 ≦ 該店半徑 → 衝突。(3) 準保障範圍(已付訂保留點位)一併檢核。(4) 若設定跨品牌互斥,則互斥品牌之保障範圍亦計入。(5) 輸入路段/行政區(非門牌)時,以代表點定位並於結果標註「概略位置,建議確認詳細地址」。</td></tr>
+  <tr><th>例外處理</th><td><strong>地址解析失敗 → 引導使用者直接於地圖點選落點</strong>,點選後執行相同檢核流程(V1.0 必備)。</td></tr>
+</table>
+
+<h3>F-05 潛在點位管理(增刪查改)</h3>
+<table>
+  <tr><th>功能說明</th><td>展會現場將付訂之預定店址登錄為潛在點位。V1.0 僅需增刪查改,<strong>不做有效期管理</strong>。</td></tr>
+  <tr><th>資料項目</th><td>點位名稱、所屬品牌、地址/座標、所在行政區、狀態(<strong>查詢中/已付訂保留</strong>)、聯絡備註、建立時間、最後異動時間。</td></tr>
+  <tr><th>業務規則</th><td>(1) 狀態為「已付訂保留」即產生準保障範圍(見 F-03)。(2) 刪除採確認後實刪;完整狀態機(已簽約/已開店/已釋出)與歷程保留於 V2.0 實作。(3) 同一展位單一新增窗口,V1.0 不處理多設備併發鎖定(V2.0)。</td></tr>
+  <tr><th>例外處理</th><td>新增時若落點已在同品牌保障範圍內,顯示警示但允許儲存(標記「衝突待確認」),由業務判斷。</td></tr>
+</table>
+
+<h3>F-06 參考圖層:租金行情</h3>
+<table>
+  <tr><th>功能說明</th><td>以每月租金為級距(Range)渲染面量圖(choropleth/網格),顏色深淺代表行情高低,附圖例。</td></tr>
+  <tr><th>業務規則</th><td>(1) 級距與配色可由設定檔調整。(2) 點擊區塊顯示租金區間與資料時間。(3) 資料來源<span class="tbd">待評估</span>(實價登錄租賃資料為候選),更新頻率依來源而定(建議季更)。</td></tr>
+</table>
+
+<h3>F-07 參考圖層:店家 POI</h3>
+<table>
+  <tr><th>功能說明</th><td>串接外部 POI 資料,顯示周邊店家分佈(餐飲、零售、超商、競品等),供展店評估快速瀏覽。</td></tr>
+  <tr><th>業務規則</th><td>(1) 依地圖範圍與縮放層級動態載入,設定最低縮放層級避免全圖大量點位。(2) 依類別篩選與配色。(3) 點擊顯示店名、類別、地址。(4) 來源<span class="tbd">待評估</span>(Google Places 計費/OSM/政府開放資料混用為候選);若採計次計費來源,查詢結果快取。</td></tr>
+</table>
+
+<h3>F-08 參考圖層:大眾運輸點位與步行距離</h3>
+<table>
+  <tr><th>功能說明</th><td>顯示捷運站、公車站等大眾運輸點位;對查詢落點或分店,以 Google 路徑規劃(步行)計算至鄰近運輸點之步行距離與時間並繪製路徑。</td></tr>
+  <tr><th>業務規則</th><td>(1) <strong>路徑結果落地快取</strong>:以「起點座標(網格化)+目的點位+運具」為鍵,已存在即直接取用,不重複呼叫 API。(2) 預設僅計算最近 N 站(N 可設定,預設 3)。(3) 顯示距離(公尺)與步行時間(分鐘)。</td></tr>
+  <tr><th>例外處理</th><td>API 呼叫失敗時顯示直線距離並標註「非步行路徑」。</td></tr>
+</table>
+
+<h3>F-09 參考圖層:停車場與步行距離</h3>
+<table>
+  <tr><th>功能說明</th><td>同 F-08 邏輯,對象為停車場點位(公有/民營)。</td></tr>
+  <tr><th>業務規則</th><td>與 F-08 共用路徑快取服務與快取規則。</td></tr>
+</table>
+
+<h3>F-10 參考圖層:人口與客群統計</h3>
+<table>
+  <tr><th>功能說明</th><td>以政府開放資料(如 SEGIS)之村里級統計渲染面量圖:人口密度、年齡結構、所得中位數等指標可切換。</td></tr>
+  <tr><th>業務規則</th><td>(1) 一次僅顯示一個統計指標。(2) 點擊顯示該村里指標明細與資料年度。(3) 與租金圖層互斥顯示(同為面量渲染,避免混淆)。</td></tr>
+</table>
+
+<h2>5. 畫面配置</h2>
+<div class="fig">
+<svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang TC','Microsoft JhengHei',sans-serif" font-size="13">
+  <rect x="10" y="10" width="880" height="480" fill="#fff" stroke="#999"/>
+  <!-- header -->
+  <rect x="10" y="10" width="880" height="52" fill="#eaf2fa" stroke="#999"/>
+  <text x="30" y="42" font-weight="bold" fill="#2c5f8a">LOGO/平台名稱</text>
+  <rect x="250" y="22" width="300" height="28" rx="4" fill="#fff" stroke="#88a"/>
+  <text x="400" y="41" text-anchor="middle">品牌篩選(全部/多選/單選)</text>
+  <rect x="700" y="22" width="170" height="28" rx="4" fill="#fff" stroke="#88a"/>
+  <text x="785" y="41" text-anchor="middle">地址查詢輸入框</text>
+  <!-- left panel -->
+  <rect x="10" y="62" width="180" height="398" fill="#f7f7f7" stroke="#999"/>
+  <text x="100" y="88" text-anchor="middle" font-weight="bold">圖層面板</text>
+  <text x="28" y="116">☑ 分店</text>
+  <text x="28" y="140">☑ 保障範圍</text>
+  <text x="28" y="164">☑ 潛在點位</text>
+  <text x="28" y="192" fill="#666">— 參考圖層 —</text>
+  <text x="28" y="216">☐ 租金行情</text>
+  <text x="28" y="240">☐ 店家 POI</text>
+  <text x="28" y="264">☐ 大眾運輸</text>
+  <text x="28" y="288">☐ 停車場</text>
+  <text x="28" y="312">☐ 人口統計</text>
+  <rect x="24" y="336" width="152" height="70" fill="#fff" stroke="#bbb"/>
+  <text x="100" y="360" text-anchor="middle" fill="#666">圖例區</text>
+  <text x="100" y="382" text-anchor="middle" fill="#666">(依開啟圖層動態顯示)</text>
+  <!-- map -->
+  <rect x="190" y="62" width="470" height="398" fill="#eef4ee" stroke="#999"/>
+  <text x="425" y="250" text-anchor="middle" font-size="18" fill="#7a8">地圖主畫面</text>
+  <text x="425" y="278" text-anchor="middle" fill="#7a8">分店/保障範圍/潛在點位/參考圖層疊加</text>
+  <text x="425" y="306" text-anchor="middle" fill="#7a8">支援直接點選落點(地址解析失敗之替代)</text>
+  <!-- right panel -->
+  <rect x="660" y="62" width="230" height="398" fill="#f7f7f7" stroke="#999"/>
+  <text x="775" y="88" text-anchor="middle" font-weight="bold">查詢結果/潛在點位面板</text>
+  <rect x="674" y="100" width="202" height="120" fill="#fff" stroke="#bbb"/>
+  <text x="775" y="124" text-anchor="middle" fill="#666">衝突檢核結果</text>
+  <text x="775" y="146" text-anchor="middle" fill="#666">(逐品牌可/不可展店</text>
+  <text x="775" y="168" text-anchor="middle" fill="#666">與衝突來源)</text>
+  <text x="775" y="198" text-anchor="middle" fill="#2c5f8a">[新增為潛在點位]</text>
+  <rect x="674" y="232" width="202" height="212" fill="#fff" stroke="#bbb"/>
+  <text x="775" y="256" text-anchor="middle" fill="#666">潛在點位清單</text>
+  <text x="775" y="278" text-anchor="middle" fill="#666">(查詢中/已付訂保留)</text>
+  <text x="775" y="300" text-anchor="middle" fill="#666">編輯/刪除/定位</text>
+</svg>
+<div class="cap">圖 5-1 主畫面配置(wireframe,實際視覺依 UI 設計)</div>
+</div>
+
+<h2>6. 潛在點位狀態流</h2>
+<div class="fig">
+<svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang TC','Microsoft JhengHei',sans-serif" font-size="13">
+  <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#555"/></marker></defs>
+  <circle cx="60" cy="90" r="8" fill="#333"/>
+  <line x1="68" y1="90" x2="130" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <text x="80" y="78" fill="#555">新增</text>
+  <rect x="132" y="60" width="140" height="60" rx="8" fill="#eaf2fa" stroke="#2c5f8a" stroke-width="2"/>
+  <text x="202" y="96" text-anchor="middle" font-weight="bold">查詢中</text>
+  <line x1="272" y1="90" x2="360" y2="90" stroke="#555" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <text x="282" y="78" fill="#555">收取訂金</text>
+  <rect x="362" y="60" width="160" height="60" rx="8" fill="#fdeee2" stroke="#c9662a" stroke-width="2"/>
+  <text x="442" y="88" text-anchor="middle" font-weight="bold">已付訂保留</text>
+  <text x="442" y="108" text-anchor="middle" font-size="11" fill="#c9662a">產生準保障範圍</text>
+  <!-- edit/delete -->
+  <path d="M 202 60 C 180 20, 224 20, 202 58" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <text x="202" y="18" text-anchor="middle" fill="#888" font-size="11">編輯</text>
+  <path d="M 442 60 C 420 20, 464 20, 442 58" fill="none" stroke="#888" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <text x="442" y="18" text-anchor="middle" fill="#888" font-size="11">編輯</text>
+  <line x1="202" y1="120" x2="202" y2="170" stroke="#888" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <line x1="442" y1="120" x2="442" y2="170" stroke="#888" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <text x="322" y="160" text-anchor="middle" fill="#888" font-size="11">刪除(確認後實刪)</text>
+  <rect x="152" y="172" width="100" height="34" rx="17" fill="#f0f0f0" stroke="#999"/>
+  <text x="202" y="194" text-anchor="middle" fill="#666">已刪除</text>
+  <rect x="392" y="172" width="100" height="34" rx="17" fill="#f0f0f0" stroke="#999"/>
+  <text x="442" y="194" text-anchor="middle" fill="#666">已刪除</text>
+  <!-- v2 -->
+  <line x1="522" y1="90" x2="590" y2="90" stroke="#aaa" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#ar2)"/>
+  <rect x="592" y="60" width="110" height="60" rx="8" fill="#f5f5f5" stroke="#aaa" stroke-dasharray="5,4"/>
+  <text x="647" y="96" text-anchor="middle" fill="#888">已簽約</text>
+  <line x1="702" y1="90" x2="760" y2="90" stroke="#aaa" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#ar2)"/>
+  <rect x="762" y="30" width="110" height="50" rx="8" fill="#f5f5f5" stroke="#aaa" stroke-dasharray="5,4"/>
+  <text x="817" y="60" text-anchor="middle" fill="#888">已開店</text>
+  <rect x="762" y="100" width="110" height="50" rx="8" fill="#f5f5f5" stroke="#aaa" stroke-dasharray="5,4"/>
+  <text x="817" y="130" text-anchor="middle" fill="#888">已釋出</text>
+  <text x="700" y="230" text-anchor="middle" fill="#888" font-size="12">─ ─ 虛線部分為 V2.0 範圍(含有效期管理、狀態歷程)</text>
+</svg>
+<div class="cap">圖 6-1 潛在點位狀態流(V1.0 實線範圍;V1.0 無有效期管理)</div>
+</div>
+
+<h2>7. 資料模型初稿</h2>
+<table>
+  <tr><th>實體</th><th>主要欄位</th><th>說明</th></tr>
+  <tr><td>GROUP 集團</td><td>group_id, name</td><td>一個集團多個品牌</td></tr>
+  <tr><td>BRAND 品牌</td><td>brand_id, group_id, name, color, protection_mode(district/radius), radius_km</td><td>保障模式綁品牌層級</td></tr>
+  <tr><td>BRAND_EXCLUSION 跨品牌互斥</td><td>brand_id_a, brand_id_b</td><td>兩兩設定,預設無資料=不互斥</td></tr>
+  <tr><td>STORE 分店</td><td>store_id, brand_id, name, address, geom(point), district_code, store_type, count_protection(bool), override_mode, override_radius_km, status</td><td>特殊店型預設 count_protection=false;覆寫欄位為空則沿用品牌設定</td></tr>
+  <tr><td>POTENTIAL_SITE 潛在點位</td><td>site_id, brand_id, name, address, geom(point), district_code, status(查詢中/已付訂保留), note, created_at, updated_at</td><td>V1.0 無有效期欄位;已付訂保留 → 準保障範圍</td></tr>
+  <tr><td>ADMIN_DISTRICT 行政區</td><td>district_code, name, geom(polygon), source_version</td><td>TGOS 圖資,記錄版本</td></tr>
+  <tr><td>RENT_GRID 租金行情</td><td>grid_id, geom, rent_range, level, data_date</td><td>面量渲染用</td></tr>
+  <tr><td>DEMOGRAPHIC 人口統計</td><td>village_code, geom, indicator, value, data_year</td><td>村里級,多指標</td></tr>
+  <tr><td>TRANSIT_POINT / PARKING_LOT</td><td>poi_id, type, name, geom</td><td>大眾運輸/停車場點位</td></tr>
+  <tr><td>ROUTE_CACHE 路徑快取</td><td>cache_id, origin_grid, dest_poi_id, mode, distance_m, duration_s, polyline, cached_at</td><td>起點網格化避免近似座標重複計算</td></tr>
+</table>
+
+<h2>8. 外部介接清單(均<span class="tbd">待評估</span>,由業主持續蒐集確認)</h2>
+<table>
+  <tr><th>用途</th><th>候選來源</th><th>備註</th></tr>
+  <tr><td>地理編碼</td><td>TGOS 全國門牌地址定位服務;Google Geocoding 備援</td><td>TGOS 免費、台灣門牌精度佳</td></tr>
+  <tr><td>行政區圖資</td><td>內政部 TGOS 鄉鎮市區/村里界</td><td>記錄版本因應行政區調整</td></tr>
+  <tr><td>底圖</td><td>Google Maps / MapLibre + OSM</td><td>授權成本差異大</td></tr>
+  <tr><td>POI</td><td>Google Places / OSM / 政府開放資料</td><td>計費來源需快取</td></tr>
+  <tr><td>步行路徑</td><td>Google Directions(walking)</td><td>結果落地快取(F-08/F-09)</td></tr>
+  <tr><td>租金行情</td><td>實價登錄(租賃)等</td><td>爬取第三方平台有法律風險,需確認</td></tr>
+  <tr><td>人口客群</td><td>SEGIS 社會經濟資料服務平台</td><td>免費,村里級</td></tr>
+  <tr><td>大眾運輸/停車場點位</td><td>TDX 運輸資料流通服務</td><td>免費 API</td></tr>
+</table>
+
+<h2>9. 非功能性需求</h2>
+<table>
+  <tr><th>項目</th><th>需求</th></tr>
+  <tr><td>圖層效能</td><td>面量/點位圖層依縮放層級簡化幾何或聚合(clustering);目標圖層切換 2 秒內完成渲染</td></tr>
+  <tr><td>API 成本控管</td><td>Directions/Places 結果一律落地快取;同鍵不重複呼叫(V2.0 加用量儀表板)</td></tr>
+  <tr><td>展會網路備援</td><td>展會前預快取展區周邊圖磚與常用查詢範圍;斷線時地圖與既有資料可瀏覽,新查詢暫停</td></tr>
+  <tr><td>安全</td><td>HTTPS;帳號登入;V1.0 單一角色,權限細分於 V2.0</td></tr>
+  <tr><td>裝置</td><td>桌機瀏覽器為主,相容平板橫式操作(展會場景)</td></tr>
+  <tr><td>備份</td><td>資料庫每日備份;潛在點位異動即時寫入</td></tr>
+</table>
+
+<h2>10. V1.1 / V2.0 功能概述</h2>
+<h3>V1.1</h3>
+<p><strong>等時圈商圈範圍</strong>:對分店或查詢落點產生步行 5/10 分鐘實際可達範圍(isochrone),與半徑保障範圍並列參考。<strong>候選點評分卡</strong>:查詢落點自動彙整租金區間、周邊 POI 統計、最近運輸點步行時間、人口指標為單頁摘要。<strong>操作記錄</strong>:記錄查詢地址、新增/異動點位之操作者與時間,作為展會後潛在客戶(leads)名單來源。</p>
+<h3>V2.0</h3>
+<p>完整點位狀態機(已簽約/已開店/已釋出)與有效期管理、多設備即時同步(WebSocket)、一鍵點位評估報告(PDF/docx)、展示模式與作業模式分離及角色權限、推薦展店區域維護後台(人工圈選+推薦理由)、API 用量儀表板與費用熔斷。</p>
+
+</body>
+</html>
