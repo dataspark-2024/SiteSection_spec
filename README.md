@@ -1,2 +1,2 @@
 # SiteSection_spec
-由 EZPage 建立的網站 - Deployed by EZPage
+連鎖品牌展店選址平台SPEC - Phoebe - 20260715
